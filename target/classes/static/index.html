@@ -4,73 +4,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <h1>Paul Chanda</h1>
   <title>Temperature & Humidity Monitor</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      background-color: lightgray;
-      /* Set background color to lightgray */
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 
-<body>
-  <h2>Temperature Monitor</h2>
-  <canvas id="temperatureChart" width="400" height="200"></canvas>
-
-  <h2>Humidity Monitor</h2>
-  <canvas id="humidityChart" width="400" height="200"></canvas>
-
+<body style="background-color: lightgray;">
+  <h1>Temperature & Humidity Monitor</h1>
+  <canvas id="sensorDataChart" width="400" height="200"></canvas>
 
   <script>
-    function generateSineWaveData(amplitude, offset, phaseShift) {
-      const labels = [];
-      const data = [];
-      const numPoints = 100;
-      const period = 10; // Adjust period for desired wave frequency
+    async function fetchData() {
+      const response = await fetch('/sensor-data');
+      const data = await response.json();
 
-      for (let i = 0; i < numPoints; i++) {
-        const x = i * (2 * Math.PI / period);
-        labels.push(x);
-        data.push(amplitude * Math.sin(x + phaseShift) + offset);
-      }
+      const timestamps = data.map(entry => entry.timestamp);
+      const temperatures = data.map(entry => entry.temperature);
+      const humidities = data.map(entry => entry.humidity);
 
-      return { labels, data };
-    }
-
-    function createChart(canvasId, label, data) {
-      const ctx = document.getElementById(canvasId).getContext('2d');
+      const ctx = document.getElementById('sensorDataChart').getContext('2d');
       const chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: data.labels,
-          datasets: [{
-            label: label,
-            data: data.data,
-            borderColor: 'rgba(255, 99, 132, 1)', // Adjust color as needed
-            borderWidth: 2,
-            fill: false
-          }]
+          labels: timestamps,
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              data: temperatures,
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 2,
+              fill: false
+            },
+            {
+              label: 'Humidity (%)',
+              data: humidities,
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 2,
+              fill: false
+            }
+          ]
         },
         options: {
           scales: {
             x: {
-              title: 'Time' // Optional: Add axis title
-            },
-            y: {
-              title: label // Optional: Add axis title
+              type: 'time',
+              time: {
+                unit: 'minute'
+              }
             }
           }
         }
       });
     }
 
-    const temperatureData = generateSineWaveData(5, 20, 0); // Adjust amplitude, offset, and phase shift for temperature
-    const humidityData = generateSineWaveData(10, 50, Math.PI / 2); // Adjust amplitude, offset, and phase shift for humidity
-
-    createChart('temperatureChart', 'Temperature (°C)', temperatureData);
-    createChart('humidityChart', 'Humidity (%)', humidityData);
+    fetchData();
   </script>
 </body>
 
